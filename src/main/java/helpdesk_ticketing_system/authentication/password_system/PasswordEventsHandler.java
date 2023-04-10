@@ -18,11 +18,13 @@ public class PasswordEventsHandler implements RequestHandler<APIGatewayProxyRequ
 {
     private final Gson gson;
     private final PasswordManagement passwordManagement;
+    private final String USERNAME;
 
     public PasswordEventsHandler(){
         gson = new GsonBuilder().setPrettyPrinting().create();
         CognitoClient cognitoClient = new CognitoClient();
         passwordManagement = new PasswordManagementImpl(cognitoClient);
+        this.USERNAME = System.getenv("username_path_param_name");
     }
     public APIGatewayProxyResponseEvent handleRequest(APIGatewayProxyRequestEvent requestEvent, Context context) {
         if(requestEvent==null)
@@ -35,17 +37,16 @@ public class PasswordEventsHandler implements RequestHandler<APIGatewayProxyRequ
         ForceChangePasswordRequestEvent changePasswordOnFirstLoginEvent =
                 gson.fromJson(requestEvent.getBody(), ForceChangePasswordRequestEvent.class);
 
-        context.getLogger().log("Event : " + changePasswordOnFirstLoginEvent);
+        String username = requestEvent.getPathParameters().get(USERNAME);
 
-        // the session_token, username & password must not be blank
+        // the session_token & password must not be blank
         if(StringUtils.isNotBlank(changePasswordOnFirstLoginEvent.getSession_token())
-                && StringUtils.isNotBlank(changePasswordOnFirstLoginEvent.getUsername())
                 && StringUtils.isNotBlank(changePasswordOnFirstLoginEvent.getPassword())
         )
         {
             Response response = passwordManagement.forceChangePassword(
                     changePasswordOnFirstLoginEvent.getSession_token(),
-                    changePasswordOnFirstLoginEvent.getUsername(),
+                    username,
                     changePasswordOnFirstLoginEvent.getPassword(),
                     context
             );
@@ -56,7 +57,7 @@ public class PasswordEventsHandler implements RequestHandler<APIGatewayProxyRequ
         else
             apiGatewayProxyResponseEvent = new APIGatewayProxyResponseEvent()
                     .withStatusCode(HttpStatusCode.BAD_REQUEST)
-                    .withBody("Session Token or Username or Password is not present.");
+                    .withBody("Session Token or Password is not present.");
 
         return apiGatewayProxyResponseEvent;
     }
