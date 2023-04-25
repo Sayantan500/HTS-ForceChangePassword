@@ -14,23 +14,30 @@ import helpdesk_ticketing_system.authentication.password_system.utility.CognitoC
 import software.amazon.awssdk.http.HttpStatusCode;
 import software.amazon.awssdk.utils.StringUtils;
 
+import java.util.HashMap;
+import java.util.Map;
+
 public class PasswordEventsHandler implements RequestHandler<APIGatewayProxyRequestEvent, APIGatewayProxyResponseEvent>
 {
     private final Gson gson;
     private final PasswordManagement passwordManagement;
     private final String USERNAME;
+    private final Map<String,String> headers;
 
     public PasswordEventsHandler(){
         gson = new GsonBuilder().setPrettyPrinting().create();
         CognitoClient cognitoClient = new CognitoClient();
         passwordManagement = new PasswordManagementImpl(cognitoClient);
         this.USERNAME = System.getenv("username_path_param_name");
+        headers = new HashMap<>();
+        headers.put("Content-Type","application/json; charset=utf-8");
     }
     public APIGatewayProxyResponseEvent handleRequest(APIGatewayProxyRequestEvent requestEvent, Context context) {
         if(requestEvent==null)
             return new APIGatewayProxyResponseEvent()
                     .withStatusCode(HttpStatusCode.INTERNAL_SERVER_ERROR)
-                    .withBody("Received Null Response from Gateway");
+                    .withHeaders(headers)
+                    .withBody("\"message\":\"Received Null Response from Gateway\"");
 
         APIGatewayProxyResponseEvent apiGatewayProxyResponseEvent;
 
@@ -51,13 +58,15 @@ public class PasswordEventsHandler implements RequestHandler<APIGatewayProxyRequ
                     context
             );
             apiGatewayProxyResponseEvent = new APIGatewayProxyResponseEvent()
-                    .withStatusCode(response.getStatus()).withBody(response.getMessage());
+                    .withStatusCode(response.getStatus())
+                    .withHeaders(headers);
         }
         // either of the required parameter is missing
         else
             apiGatewayProxyResponseEvent = new APIGatewayProxyResponseEvent()
                     .withStatusCode(HttpStatusCode.BAD_REQUEST)
-                    .withBody("Session Token or Password is not present.");
+                    .withHeaders(headers)
+                    .withBody("\"message\":\"Session Token or Password is not present.\"");
 
         return apiGatewayProxyResponseEvent;
     }
