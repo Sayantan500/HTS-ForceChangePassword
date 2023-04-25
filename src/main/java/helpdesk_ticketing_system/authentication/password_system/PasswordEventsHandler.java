@@ -59,7 +59,8 @@ public class PasswordEventsHandler implements RequestHandler<APIGatewayProxyRequ
             );
             apiGatewayProxyResponseEvent = new APIGatewayProxyResponseEvent()
                     .withStatusCode(response.getStatus())
-                    .withHeaders(headers);
+                    .withHeaders(headers)
+                    .withBody(gson.toJson(response));
         }
         // either of the required parameter is missing
         else
